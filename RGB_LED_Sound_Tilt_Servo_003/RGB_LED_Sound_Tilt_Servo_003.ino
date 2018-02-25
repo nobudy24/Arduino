@@ -1,6 +1,8 @@
 
 //#include <SMH_Song.h>
 #include "pitches.h"
+#include <Timer.h>                     //http://github.com/JChristensen/Timer
+#include <Servo.h>
 //#include "SMH_Song_Mario.h"
 
 
@@ -15,31 +17,21 @@
 #define Button3 12
 #define Button4 13
 #define TILT 2
+#define SERVO 7
 
-void setup()
-{
-pinMode(RED, OUTPUT);
-pinMode(GREEN, OUTPUT);
-pinMode(BLUE, OUTPUT);
-pinMode(AUD1, OUTPUT);
-pinMode(AUD2, OUTPUT);
-pinMode(Button1,INPUT_PULLUP);
-pinMode(Button2,INPUT_PULLUP);
-pinMode(Button3,INPUT_PULLUP);
-pinMode(Button4,INPUT_PULLUP);
-pinMode(TILT,OUTPUT);
-digitalWrite(RED, HIGH);
-digitalWrite(GREEN, LOW);
-digitalWrite(BLUE, LOW);
-digitalWrite(TILT,HIGH);
-}
 
 // define variables
+Servo myServo;
+Timer t;
 int redValue;
 int greenValue;
 int blueValue;
 int tiltValue;
+int i=0;
+int j=0;
+int serRot;
 bool stopLoop = false;
+bool Clockwise = false;
 int melody[] = {
                 NOTE_E7, NOTE_E7, 0, NOTE_E7,
                 0, NOTE_C7, NOTE_E7, 0,
@@ -95,6 +87,30 @@ int tempo[] = {
               };               
 
 
+void setup()
+{
+Serial.begin(9600);
+pinMode(RED, OUTPUT);
+pinMode(GREEN, OUTPUT);
+pinMode(BLUE, OUTPUT);
+pinMode(AUD1, OUTPUT);
+pinMode(AUD2, OUTPUT);
+pinMode(Button1,INPUT_PULLUP);
+pinMode(Button2,INPUT_PULLUP);
+pinMode(Button3,INPUT_PULLUP);
+pinMode(Button4,INPUT_PULLUP);
+pinMode(TILT,OUTPUT);
+digitalWrite(RED, HIGH);
+digitalWrite(GREEN, HIGH);
+digitalWrite(BLUE, HIGH);
+digitalWrite(TILT,HIGH);
+myServo.attach(SERVO);
+t.every(1000,takeReadingB);
+t.every(500,takeReadingI);
+t.every(500,takeReadingS);
+
+}
+
 
 // main loop
 void loop()
@@ -102,69 +118,95 @@ void loop()
 #define delayTime 10
 stopLoop = false;
 tiltValue = digitalRead(2);
+
+t.update();
+
 if(HIGH==tiltValue)
 {
-if(digitalRead((Button1)== LOW) || digitalRead((Button2)== LOW) || digitalRead((Button3)== LOW) || digitalRead((Button4)== LOW)  )
-{ 
-  stopLoop = true;
-  if (digitalRead(Button1) == LOW)
-    {
-      stopLoop = true;
-      ToggleLight(RED,true);
-      ToggleLight(BLUE,true);
-    }
-  else
-    {
-      stopLoop = false;
-    }
-  if (digitalRead(Button2) == LOW)
-  {
-    for( int i=0;i<15;i++)
-    {
-      if (digitalRead(Button1) == LOW)
+ if(serRot<=0)Clockwise ==true;
+ if(serRot>=180)Clockwise ==false;
+//  
+//  if(Clockwise)serRot+=1;
+//  if(!Clockwise)serRot-=1;
+//  
+  //myServo.write(serRot);              
+//   //delay(7);
+ 
+    
+  if(digitalRead((Button1)== LOW) || digitalRead((Button2)== LOW) || digitalRead((Button3)== LOW) || digitalRead((Button4)== LOW)  )
+  { 
+    stopLoop = true;
+    if (digitalRead(Button1) == LOW)
       {
-         break;
+        stopLoop = true;
+        ToggleLight(RED,true);
+        ToggleLight(BLUE,true);
       }
-      ToggleLight(RED,true);
-      ToggleLight(BLUE,true);
-      delay(40);
+    else
+      {
+        stopLoop = false;
+      }
+    if (digitalRead(Button2) == LOW)
+    {
+      for( int i=0;i<15;i++)
+      {
+        if (digitalRead(Button1) == LOW)
+        {
+           break;
+        }
+        ToggleLight(RED,true);
+        ToggleLight(BLUE,true);
+        delay(40);
+        ToggleLight(RED,false);
+        ToggleLight(BLUE,false);
+        delay(50);
+      }
       ToggleLight(RED,false);
       ToggleLight(BLUE,false);
-      delay(50);
-    }
-    ToggleLight(RED,false);
-    ToggleLight(BLUE,false);
-
-  }
-
-  if(digitalRead(Button3)==LOW)if(!stopLoop)startAudio();
-
-  if(digitalRead(Button4)==LOW)
-  {
-    
-      //SMH_Song::play(11, SMH_Song_Mario);
-//    int size = sizeof(melody) / sizeof(int);
-//    for (int thisNote = 0; thisNote < size; thisNote++) {
-// 
-//      int noteDuration = 1000 / tempo[thisNote];
-// 
-//      tone(AUD2, melody[thisNote], noteDuration);
-// 
-//      int pauseBetweenNotes = noteDuration * 1.30;
-//      delay(pauseBetweenNotes);
-// 
-//      // stop the tone playing:
-//      tone(AUD2, 0, noteDuration);
- 
-    } 
- 
   
-
-} 
-}
+    }
+  
+    if(digitalRead(Button3)==LOW)
+    {   
+        for (serRot = 0; serRot < 179; serRot += 1) 
+        {
+          myServo.write(serRot);            
+          delay(8);  
+        }
+    }
+  
+    if(digitalRead(Button4)==LOW)
+    { 
+       for (serRot = 180; serRot > 1; serRot -= 1) 
+        {
+          myServo.write(serRot);            
+          delay(17);                      
+        }
+      
+        //SMH_Song::play(11, SMH_Song_Mario);
+  //    int size = sizeof(melody) / sizeof(int);
+  //    for (int thisNote = 0; thisNote < size; thisNote++) {
+  // 
+  //      int noteDuration = 1000 / tempo[thisNote];
+  // 
+  //      tone(AUD2, melody[thisNote], noteDuration);
+  // 
+  //      int pauseBetweenNotes = noteDuration * 1.30;
+  //      delay(pauseBetweenNotes);
+  // 
+  //      // stop the tone playing:
+  //      tone(AUD2, 0, noteDuration);
+   
+      } 
+   
+    
+  
+  } 
+  }
 else
-{
+{ 
     startAudio();
+    //myServo.write(serRot); 
 }
 }
 
@@ -230,17 +272,22 @@ void ToggleLight(int color,bool on)
 
 void startAudio()
 {
-       int i=0;
-       int j=0;
-       for(i=0;i<80;i++)
+
+       if(i<80)
        {
+           i++;
+           if(i>=80)i=0;
+           
            digitalWrite(AUD1,HIGH);
            delay(1);//wait for 1ms
            digitalWrite(AUD1,LOW);
            delay(1);//wait for 1ms
        }
-       for(j=0;j<100;j++)
+         if(j<100)
        {
+           j++;
+           if(j>=100)j=0;
+           
            digitalWrite(AUD1, HIGH);
            delay(1);//wait for 2ms
            digitalWrite(AUD1,LOW);
@@ -248,4 +295,21 @@ void startAudio()
        }
 }
 
+void takeReadingB()
+{
+    Serial.print("Value :");
+    Serial.println(tiltValue);
+}
+void takeReadingI()
+{
+    Serial.print("Value of int is :");
+    Serial.println(serRot);
+}
+void takeReadingS()
+{
+    Serial.print("Value of String is :");
+    Serial.print(digitalRead(Button3));
+    Serial.print('\t');
+    Serial.println(digitalRead(Button4));
+}
 
